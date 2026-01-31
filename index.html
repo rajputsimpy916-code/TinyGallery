@@ -6,67 +6,46 @@
     <title>TinyGallery 📷</title>
     <style>
         body { 
-            font-family: 'Segoe UI', sans-serif; 
-            margin: 0;
-            background-image: url('bg.jpeg'); 
-            background-size: cover;
-            background-position: center center;
-            background-attachment: fixed;
-            min-height: 100vh;
+            font-family: 'Segoe UI', sans-serif; margin: 0;
+            background-image: url('bg.jpeg'); background-size: cover;
+            background-position: center; background-attachment: fixed; min-height: 100vh;
         }
         body::before {
-            content: "";
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0, 0, 0, 0.5); z-index: -1;
         }
         .header { 
-            background: rgba(216, 27, 96, 0.4); 
-            backdrop-filter: blur(10px);
-            color: white; padding: 30px 15px; 
-            position: sticky; top: 0; z-index: 1000;
-            display: flex; flex-direction: column; align-items: center; gap: 10px;
+            background: rgba(216, 27, 96, 0.4); backdrop-filter: blur(10px);
+            color: white; padding: 30px 15px; position: sticky; top: 0; z-index: 1000;
+            text-align: center;
         }
         .profile-img {
-            width: 100px; height: 100px; border-radius: 50%;
-            border: 3px solid rgba(255, 255, 255, 0.6);
-            object-fit: cover; background-image: url('bgg.jpeg'); 
-            background-size: cover; background-position: center;
+            width: 80px; height: 80px; border-radius: 50%; border: 3px solid white;
+            margin: 0 auto 10px; background-image: url('bgg.jpeg'); background-size: cover;
         }
         .gallery { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); 
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); 
             gap: 20px; padding: 20px; 
         }
         .card { 
-            background: white; border-radius: 15px; 
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
-            overflow: hidden; width: 100%; max-width: 350px; margin: 0 auto;
-            position: relative;
+            background: white; border-radius: 15px; overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3); transition: 0.3s;
         }
-        .card img { width: 100%; height: auto; display: block; object-fit: cover; }
-        .card-info { 
-            padding: 12px; text-align: left; 
-            display: flex; justify-content: space-between; align-items: center;
-        }
-        .delete-btn {
-            background: #ff4d4d; color: white; border: none;
-            padding: 5px 12px; border-radius: 5px; cursor: pointer;
-            font-size: 12px; font-weight: bold;
-        }
+        .card img { width: 100%; height: auto; display: block; }
+        .card-info { padding: 10px; display: flex; justify-content: space-between; align-items: center; }
         .upload-btn { 
             background: #e91e63; color: white; padding: 10px 25px; 
-            border-radius: 50px; cursor: pointer; font-weight: bold; 
+            border-radius: 50px; cursor: pointer; font-weight: bold; display: inline-block;
         }
-        h1 { margin: 0; font-size: 32px; }
-        p { margin: 0; opacity: 0.9; }
+        .delete-btn { background: #ff4d4d; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; }
     </style>
 </head>
 <body>
     <div class="header">
         <div class="profile-img"></div>
         <h1>TinyGallery 📷</h1>
-        <p>Keeping your memories forever</p> 
-        <label class="upload-btn"> 🌸 Upload to Cloud <input type="file" id="file-input" style="display:none"></label>
+        <p>Private Vault • Compressed • Secure</p>
+        <label class="upload-btn"> 🌸 Upload Memory <input type="file" id="file-input" accept="image/*" style="display:none"></label>
     </div>
     <div id="gallery" class="gallery"></div>
 
@@ -78,32 +57,66 @@
     document.getElementById('file-input').addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if(!file) return;
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('upload_preset', UPLOAD_PRESET);
-        alert("Uploading... 🌸");
-        try {
-            const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
-                method: 'POST', body: formData
-            });
-            const data = await res.json();
-            if(data.secure_url) {
-                saveToLocal(data.secure_url);
-                displayImage(data.secure_url);
-            }
-        } catch (err) { alert("Error!"); }
+
+        // 1. Har User ka apna PIN Check
+        let userPin = localStorage.getItem('myPrivatePin');
+        if (!userPin) {
+            userPin = prompt("Naya Account: Apna Secret PIN set karein 🌸");
+            if (userPin) {
+                localStorage.setItem('myPrivatePin', userPin);
+                alert("PIN Set Ho Gaya!");
+            } else return;
+        }
+
+        const enterPin = prompt("Security Check: Apna PIN daalein 🌸");
+        if (enterPin !== userPin) {
+            alert("Galat PIN! ❌");
+            return;
+        }
+
+        alert("Compressing Image... ⏳");
+        
+        // 2. Image Compression (Space bachane ke liye)
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = async () => {
+                const canvas = document.createElement('canvas');
+                const MAX_WIDTH = 900; 
+                const scaleSize = MAX_WIDTH / img.width;
+                canvas.width = MAX_WIDTH;
+                canvas.height = img.height * scaleSize;
+
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                canvas.toBlob(async (blob) => {
+                    const formData = new FormData();
+                    formData.append('file', blob);
+                    formData.append('upload_preset', UPLOAD_PRESET);
+
+                    try {
+                        const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
+                            method: 'POST', body: formData
+                        });
+                        const data = await res.json();
+                        if(data.secure_url) {
+                            saveToLocal(data.secure_url);
+                            displayImage(data.secure_url);
+                            alert("Gallery mein save ho gaya! 🌸");
+                        }
+                    } catch (err) { alert("Upload Failed!"); }
+                }, 'image/jpeg', 0.6); 
+            };
+        };
     });
 
     function displayImage(url) {
         const card = document.createElement('div');
         card.className = 'card';
-        card.innerHTML = `
-            <img src="${url}">
-            <div class="card-info">
-                <span><strong>Saved Memory</strong></span>
-                <button class="delete-btn" onclick="deletePhoto('${url}', this)">Delete</button>
-            </div>
-        `;
+        card.innerHTML = `<img src="${url}"><div class="card-info"><span>Saved Memory</span><button class="delete-btn" onclick="deletePhoto('${url}', this)">Delete</button></div>`;
         gallery.prepend(card);
     }
 
@@ -114,11 +127,11 @@
     }
 
     function deletePhoto(url, btn) {
-        if(confirm("Kya aap is photo ko gallery se hatana chahte hain?")) {
+        if(confirm("Humesha ke liye delete karein? (Ye sirf aapki gallery se hatega)")) {
             let photos = JSON.parse(localStorage.getItem('tinyGalleryData') || '[]');
             photos = photos.filter(p => p !== url);
             localStorage.setItem('tinyGalleryData', JSON.stringify(photos));
-            btn.parentElement.parentElement.remove();
+            btn.closest('.card').remove();
         }
     }
 
