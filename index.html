@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TinyGallery 📷</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            text-align: center; 
+            margin: 0;
+            background-image: url('bg.jpeg'); 
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            min-height: 100vh;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.4); 
+            z-index: -1;
+        }
+
+        .header { 
+            background: rgba(216, 27, 96, 0.35); 
+            backdrop-filter: blur(10px);
+            color: white; 
+            padding: 40px 20px; 
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Circular Logo from your reference */
+        .profile-img {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 4px solid rgba(255, 255, 255, 0.6);
+            object-fit: cover;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+            background-image: url('bgg.jpeg'); 
+            background-size: cover;
+            background-position: center;
+        }
+
+        .gallery { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); 
+            gap: 30px; 
+            padding: 40px; 
+        }
+
+        /* Aesthetic Card Look */
+        .card { 
+            background: white; 
+            padding: 0; 
+            border-radius: 12px; 
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            transition: 0.4s ease;
+        }
+
+        .card:hover { transform: translateY(-10px); }
+
+        .card img { 
+            width: 100%; 
+            height: 200px; 
+            object-fit: cover; 
+            display: block;
+        }
+
+        /* Card info section like your reference */
+        .card-info {
+            padding: 15px;
+            text-align: left;
+            background: #fff;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .upload-btn { 
+            background: #e91e63; 
+            color: white; 
+            padding: 12px 35px; 
+            border-radius: 50px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            border: none; 
+            font-size: 18px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        h1 { margin: 0; font-size: 42px; text-shadow: 2px 2px 10px rgba(0,0,0,0.4); }
+        p { margin: 0; opacity: 0.85; font-size: 18px; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="profile-img"></div>
+        <h1>TinyGallery 📷</h1>
+        <p>Keeping your memories forever</p> 
+        <label class="upload-btn"> 🌸 Upload to Cloud <input type="file" id="file-input" style="display:none"></label>
+    </div>
+
+    <div id="gallery" class="gallery"></div>
+
+<script>
+    const CLOUD_NAME = "deu54sydq";
+    const UPLOAD_PRESET = "simpy_vault";
+    const gallery = document.getElementById('gallery');
+
+    document.getElementById('file-input').addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if(!file) return;
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('upload_preset', UPLOAD_PRESET);
+
+        alert("Uploading to Cloud... 🌸");
+        try {
+            const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
+                method: 'POST',
+                body: formData
+            });
+            const data = await res.json();
+            if(data.secure_url) {
+                saveToLocal(data.secure_url);
+                displayImage(data.secure_url);
+                alert("Success! Photo added.");
+            }
+        } catch (err) { alert("Connection Error."); }
+    });
+
+    function displayImage(url) {
+        const card = document.createElement('div');
+        card.className = 'card';
+        // Adding info labels like your screenshot
+        card.innerHTML = `
+            <img src="${url}">
+            <div class="card-info">
+                <strong>Saved Memory</strong><br>
+                Cloud Storage Enabled
+            </div>
+        `;
+        gallery.prepend(card);
+    }
+
+    function saveToLocal(url) {
+        let photos = JSON.parse(localStorage.getItem('tinyGalleryData') || '[]');
+        photos.push(url);
+        localStorage.setItem('tinyGalleryData', JSON.stringify(photos));
+    }
+
+    const savedPhotos = JSON.parse(localStorage.getItem('tinyGalleryData') || '[]');
+    savedPhotos.forEach(displayImage);
+</script>
+</body>
+</html>
