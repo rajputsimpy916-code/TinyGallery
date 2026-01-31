@@ -38,45 +38,57 @@
             border-radius: 50px; cursor: pointer; font-weight: bold; display: inline-block;
         }
         .delete-btn { background: #ff4d4d; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; }
+        .reset-link {
+            display: block; margin-top: 15px; color: #fff; font-size: 13px;
+            text-decoration: underline; cursor: pointer; opacity: 0.8;
+        }
     </style>
 </head>
 <body>
     <div class="header">
         <div class="profile-img"></div>
         <h1>TinyGallery 📷</h1>
-        <p>Private Vault • Compressed • Secure</p>
+        <p>Private • Compressed • Secure</p>
         <label class="upload-btn"> 🌸 Upload Memory <input type="file" id="file-input" accept="image/*" style="display:none"></label>
+        <span class="reset-link" onclick="resetMyPin()">Forgot or Change PIN?</span>
     </div>
     <div id="gallery" class="gallery"></div>
 
 <script>
-    const CLOUD_NAME = "deu54sydq";
-    const UPLOAD_PRESET = "simpy_vault";
+    // FIX: Removed citations from inside the code strings
+    const CLOUD_NAME = "deu54sydq"; 
+    const UPLOAD_PRESET = "simpy_vault"; 
     const gallery = document.getElementById('gallery');
+
+    function resetMyPin() {
+        if(confirm("Do you want to reset your PIN? Your old photos will remain safe. 🌸")) {
+            localStorage.removeItem('myPrivatePin');
+            alert("PIN has been reset! Please set a new PIN during your next upload.");
+            location.reload(); 
+        }
+    }
 
     document.getElementById('file-input').addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if(!file) return;
 
-        // 1. Har User ka apna PIN Check
         let userPin = localStorage.getItem('myPrivatePin');
         if (!userPin) {
-            userPin = prompt("Naya Account: Apna Secret PIN set karein 🌸");
+            userPin = prompt("Welcome! Please set your new Secret PIN 🌸");
             if (userPin) {
                 localStorage.setItem('myPrivatePin', userPin);
-                alert("PIN Set Ho Gaya!");
+                alert("PIN set successfully!");
             } else return;
         }
 
-        const enterPin = prompt("Security Check: Apna PIN daalein 🌸");
+        const enterPin = prompt("Security Check: Enter your PIN 🌸");
         if (enterPin !== userPin) {
-            alert("Galat PIN! ❌");
+            alert("Incorrect PIN! ❌");
             return;
         }
 
-        alert("Compressing Image... ⏳");
+        alert("Optimizing Image Quality... ⏳");
         
-        // 2. Image Compression (Space bachane ke liye)
         const reader = new FileReader();
         reader.readAsDataURL(file);
         reader.onload = (event) => {
@@ -102,12 +114,21 @@
                             method: 'POST', body: formData
                         });
                         const data = await res.json();
+                        
+                        // Log for debugging
+                        console.log("Response:", data);
+
                         if(data.secure_url) {
                             saveToLocal(data.secure_url);
                             displayImage(data.secure_url);
-                            alert("Gallery mein save ho gaya! 🌸");
+                            alert("Gallery Updated! 🌸");
+                        } else {
+                            alert("Upload failed: " + (data.error ? data.error.message : "Unknown error"));
                         }
-                    } catch (err) { alert("Upload Failed!"); }
+                    } catch (err) { 
+                        console.error(err);
+                        alert("Network Error! Check your internet."); 
+                    }
                 }, 'image/jpeg', 0.6); 
             };
         };
@@ -127,7 +148,7 @@
     }
 
     function deletePhoto(url, btn) {
-        if(confirm("Humesha ke liye delete karein? (Ye sirf aapki gallery se hatega)")) {
+        if(confirm("Delete this photo permanently from your gallery?")) {
             let photos = JSON.parse(localStorage.getItem('tinyGalleryData') || '[]');
             photos = photos.filter(p => p !== url);
             localStorage.setItem('tinyGalleryData', JSON.stringify(photos));
