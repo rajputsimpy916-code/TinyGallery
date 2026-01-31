@@ -7,105 +7,58 @@
     <style>
         body { 
             font-family: 'Segoe UI', sans-serif; 
-            text-align: center; 
             margin: 0;
             background-image: url('bg.jpeg'); 
-            /* Mobile fix: Image ko pure screen par sahi se fit karne ke liye */
             background-size: cover;
             background-position: center center;
             background-attachment: fixed;
-            background-repeat: no-repeat;
             min-height: 100vh;
         }
-
-        /* Mobile par background overlay ko thoda dark rakhenge taki text saaf dikhe */
         body::before {
             content: "";
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.5); 
-            z-index: -1;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.5); z-index: -1;
         }
-
         .header { 
-            background: rgba(216, 27, 96, 0.45); 
+            background: rgba(216, 27, 96, 0.4); 
             backdrop-filter: blur(10px);
-            color: white; 
-            padding: 30px 15px; 
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
+            color: white; padding: 30px 15px; 
+            position: sticky; top: 0; z-index: 1000;
+            display: flex; flex-direction: column; align-items: center; gap: 10px;
         }
-
         .profile-img {
-            width: 90px;
-            height: 90px;
-            border-radius: 50%;
+            width: 100px; height: 100px; border-radius: 50%;
             border: 3px solid rgba(255, 255, 255, 0.6);
-            object-fit: cover;
-            background-image: url('bgg.jpeg'); 
-            background-size: cover;
-            background-position: center;
+            object-fit: cover; background-image: url('bgg.jpeg'); 
+            background-size: cover; background-position: center;
         }
-
         .gallery { 
             display: grid; 
-            /* Mobile par cards ek ke niche ek aayenge */
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); 
-            gap: 20px; 
-            padding: 20px; 
+            gap: 20px; padding: 20px; 
         }
-
         .card { 
-            background: white; 
-            border-radius: 15px; 
+            background: white; border-radius: 15px; 
             box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
-            overflow: hidden;
-            margin: 0 auto;
-            width: 100%;
-            max-width: 320px;
+            overflow: hidden; width: 100%; max-width: 350px; margin: 0 auto;
+            position: relative;
         }
-
-        .card img { 
-            width: 100%; 
-            height: auto; 
-            min-height: 200px;
-            max-height: 400px;
-            object-fit: cover; 
-            display: block;
+        .card img { width: 100%; height: auto; display: block; object-fit: cover; }
+        .card-info { 
+            padding: 12px; text-align: left; 
+            display: flex; justify-content: space-between; align-items: center;
         }
-
-        .card-info {
-            padding: 12px;
-            text-align: left;
-            font-size: 14px;
-            color: #444;
+        .delete-btn {
+            background: #ff4d4d; color: white; border: none;
+            padding: 5px 12px; border-radius: 5px; cursor: pointer;
+            font-size: 12px; font-weight: bold;
         }
-
         .upload-btn { 
-            background: #e91e63; 
-            color: white; 
-            padding: 10px 25px; 
-            border-radius: 50px; 
-            cursor: pointer; 
-            font-weight: bold; 
-            font-size: 16px;
-            display: inline-block;
+            background: #e91e63; color: white; padding: 10px 25px; 
+            border-radius: 50px; cursor: pointer; font-weight: bold; 
         }
-
         h1 { margin: 0; font-size: 32px; }
-        p { margin: 0; opacity: 0.9; font-size: 16px; }
-
-        /* Tablet aur Mobile ke liye special settings */
-        @media (max-width: 600px) {
-            .gallery { padding: 15px; }
-            h1 { font-size: 28px; }
-            .profile-img { width: 80px; height: 80px; }
-        }
+        p { margin: 0; opacity: 0.9; }
     </style>
 </head>
 <body>
@@ -144,7 +97,13 @@
     function displayImage(url) {
         const card = document.createElement('div');
         card.className = 'card';
-        card.innerHTML = `<img src="${url}"><div class="card-info"><strong>Saved Memory</strong><br>Cloud Storage Enabled</div>`;
+        card.innerHTML = `
+            <img src="${url}">
+            <div class="card-info">
+                <span><strong>Saved Memory</strong></span>
+                <button class="delete-btn" onclick="deletePhoto('${url}', this)">Delete</button>
+            </div>
+        `;
         gallery.prepend(card);
     }
 
@@ -154,9 +113,17 @@
         localStorage.setItem('tinyGalleryData', JSON.stringify(photos));
     }
 
+    function deletePhoto(url, btn) {
+        if(confirm("Kya aap is photo ko gallery se hatana chahte hain?")) {
+            let photos = JSON.parse(localStorage.getItem('tinyGalleryData') || '[]');
+            photos = photos.filter(p => p !== url);
+            localStorage.setItem('tinyGalleryData', JSON.stringify(photos));
+            btn.parentElement.parentElement.remove();
+        }
+    }
+
     const savedPhotos = JSON.parse(localStorage.getItem('tinyGalleryData') || '[]');
     savedPhotos.forEach(displayImage);
 </script>
 </body>
 </html>
-
